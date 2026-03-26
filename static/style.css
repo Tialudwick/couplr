@@ -1,9 +1,107 @@
-body { font-family:'Helvetica',Arial,sans-serif; background:#fdf6f0; color:#333; margin:0; padding:0; }
-.container { max-width:900px; margin:2rem auto; padding:2rem; background:#fff7f0; border-radius:12px; box-shadow:0 0 15px rgba(0,0,0,0.1);}
-.agent, #new-agent-form { margin-bottom:1rem; padding:1rem; background:#fff0f0; border-radius:8px;}
-.agent label { display:block; margin:0.3rem 0; }
-button { background:#ff7f87; color:white; border:none; padding:0.6rem 1.2rem; margin-right:0.5rem; border-radius:6px; cursor:pointer; transition:0.3s;}
-button:hover{background:#ff5b63;}
-#results{margin-top:1rem; white-space: pre-wrap;}
-canvas{margin-top:2rem;}
-input{margin:0.3rem; padding:0.3rem;}
+/* Couplr Stylesheet */
+
+body { 
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+    background: #fdf6f0; 
+    color: #333; 
+    margin: 0; 
+    padding: 0; 
+}
+
+.container { 
+    max-width: 900px; 
+    margin: 2rem auto; 
+    padding: 2rem; 
+    background: #fff; 
+    border-radius: 16px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+h1 { color: #ff7f87; margin-top: 0; }
+
+#new-agent-form { 
+    background: #fff9f9; 
+    padding: 1.5rem; 
+    border-radius: 12px; 
+    border: 1px solid #ffeaea;
+}
+
+.input-group { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 15px; 
+    align-items: center; 
+}
+
+.sliders { display: flex; gap: 10px; }
+
+input[type="text"] { 
+    padding: 0.6rem; 
+    border: 1px solid #ddd; 
+    border-radius: 6px; 
+    flex: 1; 
+    min-width: 150px;
+}
+
+input[type="number"] { 
+    width: 60px; 
+    padding: 0.4rem; 
+    border: 1px solid #ddd; 
+    border-radius: 4px; 
+}
+
+button { 
+    background: #ff7f87; 
+    color: white; 
+    border: none; 
+    padding: 0.8rem 1.5rem; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-weight: bold;
+    transition: 0.2s ease;
+}
+
+button:hover { background: #ff5b63; transform: translateY(-1px); }
+
+.secondary-btn { background: #5eb5f7; }
+.secondary-btn:hover { background: #4a9fdf; }
+
+hr { border: 0; border-top: 1px solid #eee; margin: 2rem 0; }
+
+/* Agent Cards */
+#agents-container { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); 
+    gap: 15px; 
+    margin-bottom: 2rem;
+}
+
+.agent { 
+    background: #fffafa; 
+    padding: 1rem; 
+    border-radius: 10px; 
+    border-left: 4px solid #ff7f87; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.agent h3 { margin: 0 0 10px 0; font-size: 1.1rem; }
+.agent label { display: block; font-size: 0.85rem; margin: 5px 0; color: #666; }
+
+/* Results & Chart */
+#results { 
+    margin: 1.5rem 0; 
+    padding: 1rem; 
+    background: #f8f9fa; 
+    border-radius: 8px; 
+    line-height: 1.6;
+}
+
+.chart-container { 
+    margin-top: 2rem; 
+    background: #fff; 
+    padding: 1rem; 
+    border: 1px solid #eee; 
+    border-radius: 12px; 
+}
+
+.controls { display: flex; gap: 10px; }

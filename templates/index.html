@@ -4,46 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Couplr | Relationship Simulator</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>{{ app_name }}</h1>
-        <p style="color: #666; margin-bottom: 2rem;">Add two or more agents to simulate their relationship trajectory.</p>
+        <h1>Couplr</h1>
+        <p style="color: #666; margin-bottom: 2rem;">Add two or more people to simulate their relationship trajectory over 12 months.</p>
 
         <div id="new-agent-form">
             <h3>Add New Person</h3>
-            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
-                <input type="text" id="agent-name" placeholder="Name (e.g. Alex)" style="flex: 1;">
-                <label>Comm: <input type="number" id="agent-comm" min="0" max="1" step="0.01" value="0.5"></label>
-                <label>Trust: <input type="number" id="agent-trust" min="0" max="1" step="0.01" value="0.5"></label>
-                <label>Patience: <input type="number" id="agent-patience" min="0" max="1" step="0.01" value="0.5"></label>
+            <div class="input-group">
+                <input type="text" id="agent-name" placeholder="Name (e.g. Alex)">
+                <div class="sliders">
+                    <label>Comm: <input type="number" id="agent-comm" min="0" max="1" step="0.01" value="0.5"></label>
+                    <label>Trust: <input type="number" id="agent-trust" min="0" max="1" step="0.01" value="0.5"></label>
+                    <label>Patience: <input type="number" id="agent-patience" min="0" max="1" step="0.01" value="0.5"></label>
+                </div>
                 <button id="add-agent-button">Add to Sim</button>
             </div>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 2rem 0;">
+        <hr>
 
-        <div id="agents-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
-            </div>
+        <div id="agents-container"></div>
 
-        <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee;">
+        <div class="controls">
             <button id="run-sim">Run Simulation</button>
-            <button id="save-compare" style="background: #5eb5f7;">Save for Comparison</button>
-            <button id="load-sim" style="background: #999;">Load Last Run</button>
+            <button id="save-compare" class="secondary-btn">Save for Comparison</button>
         </div>
 
-        <div id="results" style="margin-top: 1.5rem; padding: 1rem; background: #fff; border-radius: 8px; border-left: 5px solid #ff7f87;">
-            <em>Add agents and click "Run" to see results.</em>
+        <div id="results">
+            <em>Add agents and click "Run" to begin.</em>
         </div>
 
-        <div style="background: white; padding: 15px; border-radius: 12px; margin-top: 20px;">
+        <div class="chart-container">
             <canvas id="simChart"></canvas>
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="script.js"></script>
 </body>
 </html>
