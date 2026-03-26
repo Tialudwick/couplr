@@ -11,35 +11,38 @@
 <body>
     <div class="container">
         <h1>Couplr</h1>
-        <p style="text-align: center; opacity: 0.6; margin-bottom: 2rem;">NEURAL SYNASTRY PROTOCOL // VER 3.0</p>
+        <p class="subtitle">NEURAL SYNASTRY PROTOCOL // VER 4.0</p>
         
         <div id="new-agent-form">
-            <div class="input-group" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+            <div class="input-row">
                 <input type="text" id="agent-name" placeholder="IDENTIFIER (NAME)">
                 <input type="date" id="birth-date">
                 <input type="time" id="birth-time">
-                <select id="gmt-offset">
-                    <option value="0">GMT +0</option>
-                    <option value="-5">GMT -5</option>
-                    <option value="-8">GMT -8</option>
-                    <option value="1">GMT +1</option>
-                </select>
+            </div>
+            
+            <div class="input-row" style="margin-top: 15px;">
+                <div style="position: relative; flex: 2;">
+                    <input type="text" id="location-search" placeholder="SEARCH BIRTH CITY (e.g. Tokyo)..." autocomplete="off">
+                    <div id="location-results" class="dropdown-results"></div>
+                </div>
+                <input type="hidden" id="lat">
+                <input type="hidden" id="lon">
                 <button id="add-agent-button">Scan Birth Map</button>
             </div>
         </div>
 
         <div id="agents-container"></div>
 
-        <div class="controls" style="margin-top: 2rem;">
-            <button id="run-sim">Initiate Synastry Simulation</button>
-            <button id="clear-all" style="border-color: #444; color: #888; margin-top: 10px;">Purge Data</button>
+        <div class="controls">
+            <button id="run-sim" class="primary-btn">Initiate Synastry Simulation</button>
+            <button id="clear-all" class="ghost-btn">Purge All Data</button>
         </div>
 
         <div id="results">
-            // AWAITING DATA INPUT...
+            // AWAITING COORDINATES...
         </div>
 
-        <div class="chart-container" style="margin-top: 2rem; background: rgba(0,0,0,0.4); border-radius: 16px; padding: 20px;">
+        <div class="chart-box">
             <canvas id="simChart"></canvas>
         </div>
     </div>

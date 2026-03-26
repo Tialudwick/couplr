@@ -1,136 +1,139 @@
 /**
- * script.js - Full Astrology Engine with Sign Descriptions
+ * script.js - Neo-Natal Space Engine
  */
 
 let myChart = null;
 
-// --- 1. The Astrology Database ---
-const ZODIAC_DATA = {
-    "Aries": { element: "Fire", traits: "Bold, energetic, trailblazing, and direct.", planet: "Mars" },
-    "Taurus": { element: "Earth", traits: "Steady, loyal, sensual, and practical.", planet: "Venus" },
-    "Gemini": { element: "Air", traits: "Curious, versatile, expressive, and social.", planet: "Mercury" },
-    "Cancer": { element: "Water", traits: "Intuitive, nurturing, protective, and sentimental.", planet: "Moon" },
-    "Leo": { element: "Fire", traits: "Radiant, confident, creative, and theatrical.", planet: "Sun" },
-    "Virgo": { element: "Earth", traits: "Analytical, helpful, modest, and orderly.", planet: "Mercury" },
-    "Libra": { element: "Air", traits: "Diplomatic, artistic, social, and fair-minded.", planet: "Venus" },
-    "Scorpio": { element: "Water", traits: "Intense, passionate, private, and transformative.", planet: "Pluto" },
-    "Sagittarius": { element: "Fire", traits: "Optimistic, adventurous, philosophical, and honest.", planet: "Jupiter" },
-    "Capricorn": { element: "Earth", traits: "Ambitious, disciplined, patient, and grounded.", planet: "Saturn" },
-    "Aquarius": { element: "Air", traits: "Innovative, independent, humanitarian, and unique.", planet: "Uranus" },
-    "Pisces": { element: "Water", traits: "Dreamy, compassionate, artistic, and psychic.", planet: "Neptune" }
+// --- 1. Geocoding (City Search) ---
+const locSearch = document.getElementById('location-search');
+const locResults = document.getElementById('location-results');
+
+locSearch.addEventListener('input', async (e) => {
+    const query = e.target.value;
+    if (query.length < 3) return locResults.style.display = 'none';
+
+    try {
+        const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${query}&count=5`);
+        const data = await res.json();
+        if (data.results) {
+            locResults.innerHTML = data.results.map(city => `
+                <div class="location-item" onclick="setLoc('${city.name}, ${city.country}', ${city.latitude}, ${city.longitude})">
+                    ${city.name}, ${city.admin1 || city.country} (${city.latitude.toFixed(2)}, ${city.longitude.toFixed(2)})
+                </div>
+            `).join('');
+            locResults.style.display = 'block';
+        }
+    } catch (err) { console.error("Geocoding failed", err); }
+});
+
+function setLoc(name, lat, lon) {
+    locSearch.value = name;
+    document.getElementById('lat').value = lat;
+    document.getElementById('lon').value = lon;
+    locResults.style.display = 'none';
+}
+
+// --- 2. Accurate Sign Logic ---
+const ZODIAC = {
+    "Aries": "Bold trailblazer. Fire element.", "Taurus": "Steady builder. Earth element.",
+    "Gemini": "Curious explorer. Air element.", "Cancer": "Nurturing protector. Water element.",
+    "Leo": "Radiant leader. Fire element.", "Virgo": "Analytical healer. Earth element.",
+    "Libra": "Harmonious artist. Air element.", "Scorpio": "Intense alchemist. Water element.",
+    "Sagittarius": "Wild philosopher. Fire element.", "Capricorn": "Disciplined master. Earth element.",
+    "Aquarius": "Visionary rebel. Air element.", "Pisces": "Dreamy mystic. Water element."
 };
 
-// --- 2. Accurate Sun Sign Calculation ---
-function getSunSign(date) {
-    const month = date.getUTCMonth() + 1; 
-    const day = date.getUTCDate();
+function getSunSign(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(Date.UTC(y, m - 1, d));
+    const mm = date.getUTCMonth() + 1;
+    const dd = date.getUTCDate();
 
-    if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) return "Aries";
-    if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) return "Taurus";
-    if ((month == 5 && day >= 21) || (month == 6 && day <= 20)) return "Gemini";
-    if ((month == 6 && day >= 21) || (month == 7 && day <= 22)) return "Cancer";
-    if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) return "Leo";
-    if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) return "Virgo";
-    if ((month == 9 && day >= 23) || (month == 10 && day <= 22)) return "Libra";
-    if ((month == 10 && day >= 23) || (month == 11 && day <= 21)) return "Scorpio";
-    if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) return "Sagittarius";
-    if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) return "Capricorn";
-    if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) return "Aquarius";
+    if ((mm == 3 && dd >= 21) || (mm == 4 && dd <= 19)) return "Aries";
+    if ((mm == 4 && dd >= 20) || (mm == 5 && dd <= 20)) return "Taurus";
+    if ((mm == 5 && dd >= 21) || (mm == 6 && dd <= 20)) return "Gemini";
+    if ((mm == 6 && dd >= 21) || (mm == 7 && dd <= 22)) return "Cancer";
+    if ((mm == 7 && dd >= 23) || (mm == 8 && dd <= 22)) return "Leo";
+    if ((mm == 8 && dd >= 23) || (mm == 9 && dd <= 22)) return "Virgo";
+    if ((mm == 9 && dd >= 23) || (mm == 10 && dd <= 22)) return "Libra";
+    if ((mm == 10 && dd >= 23) || (mm == 11 && dd <= 21)) return "Scorpio";
+    if ((mm == 11 && dd >= 22) || (mm == 12 && dd <= 21)) return "Sagittarius";
+    if ((mm == 12 && dd >= 22) || (mm == 1 && dd <= 19)) return "Capricorn";
+    if ((mm == 1 && dd >= 20) || (mm == 2 && dd <= 18)) return "Aquarius";
     return "Pisces";
 }
 
-// --- 3. The Natal Map Generator ---
-function generateNatalData(dateStr) {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const birthDate = new Date(Date.UTC(year, month - 1, day));
-    const sunSign = getSunSign(birthDate);
-    const ts = birthDate.getTime();
+// --- 3. UI and Sim ---
+document.getElementById('add-agent-button').addEventListener('click', () => {
+    const name = document.getElementById('agent-name').value;
+    const date = document.getElementById('birth-date').value;
+    const lat = document.getElementById('lat').value;
+
+    if (!name || !date || !lat) return alert("System Error: Identify Name, Date, and Coordinates.");
+
+    const sun = getSunSign(date);
+    const ts = new Date(date).getTime();
+    const sigKeys = Object.keys(ZODIAC);
+    const getS = (o) => sigKeys[Math.floor(Math.abs(Math.sin(ts + o)) * 12)];
+
+    const data = { name, sun, moon: getS(7), venus: getS(13), mars: getS(21), lat };
     
-    const SIGNS = Object.keys(ZODIAC_DATA);
-    const getSign = (offset) => SIGNS[Math.floor(Math.abs(Math.sin(ts + offset)) * 12)];
-
-    return {
-        sun: sunSign,
-        moon: getSign(500),
-        rising: getSign(1000),
-        venus: getSign(1500),
-        mars: getSign(2000)
-    };
-}
-
-// --- 4. UI Rendering ---
-document.getElementById("add-agent-button").addEventListener("click", () => {
-    const name = document.getElementById("agent-name").value;
-    const date = document.getElementById("birth-date").value;
-
-    if (!name || !date) return alert("Please enter name and date!");
-
-    const data = generateNatalData(date);
-    const sunInfo = ZODIAC_DATA[data.sun];
-    
-    const div = document.createElement("div");
-    div.className = "agent natal-card";
+    const div = document.createElement('div');
+    div.className = 'agent natal-card';
     div.dataset.chart = JSON.stringify(data);
-    div.dataset.name = name;
-
     div.innerHTML = `
-        <div class="card-header">
-            <h3>${name} (${data.sun})</h3>
-            <button onclick="this.parentElement.parentElement.remove()" style="border:none; background:none; cursor:pointer;">✕</button>
+        <div style="display:flex; justify-content:space-between">
+            <h3 style="margin:0; font-family:Orbitron;">${name} // ${sun}</h3>
+            <button onclick="this.parentElement.parentElement.remove()" style="background:none; color:var(--neon-pink); border:none;">[DELETE]</button>
         </div>
-        <div class="element-tag">${sunInfo.element} Element</div>
-        <p style="font-size: 0.9rem; font-style: italic; margin-bottom: 15px;">"${sunInfo.traits}"</p>
-        
+        <p style="font-size:0.8rem; opacity:0.7">${ZODIAC[sun]}</p>
         <div class="planet-grid">
-            <div class="planet-item">🌙 <strong>Moon:</strong> ${data.moon}</div>
-            <div class="planet-item">⬆️ <strong>Rising:</strong> ${data.rising}</div>
-            <div class="planet-item">♀ <strong>Venus:</strong> ${data.venus}</div>
-            <div class="planet-item">♂ <strong>Mars:</strong> ${data.mars}</div>
+            <div class="planet-item">🌙 MOON: ${data.moon}</div>
+            <div class="planet-item">♀ VENUS: ${data.venus}</div>
+            <div class="planet-item">♂ MARS: ${data.mars}</div>
+            <div class="planet-item">📍 LAT: ${parseFloat(lat).toFixed(2)}</div>
         </div>
     `;
-    document.getElementById("agents-container").appendChild(div);
-    document.getElementById("agent-name").value = "";
+    document.getElementById('agents-container').appendChild(div);
 });
 
-// --- 5. Synastry Sim ---
-document.getElementById("run-sim").addEventListener("click", () => {
-    const cards = document.querySelectorAll(".natal-card");
-    if (cards.length < 2) return alert("Add two people to compare!");
+document.getElementById('run-sim').addEventListener('click', () => {
+    const cards = document.querySelectorAll('.natal-card');
+    if (cards.length < 2) return alert("Sync Failure: Minimum 2 biological signatures required.");
 
     const p1 = JSON.parse(cards[0].dataset.chart);
     const p2 = JSON.parse(cards[1].dataset.chart);
 
     let score = 0.5;
-    // Simple logic: Element matches boost the score
-    if (ZODIAC_DATA[p1.sun].element === ZODIAC_DATA[p2.sun].element) score += 0.15;
-    if (p1.venus === p2.mars || p2.venus === p1.mars) score += 0.2;
+    if (p1.sun === p2.sun) score += 0.1;
+    if (p1.venus === p2.mars) score += 0.2;
 
     let history = [];
     for (let i = 0; i < 12; i++) {
-        score += (Math.random() * 0.08) - 0.04;
-        history.push(score);
+        score += (Math.random() * 0.1) - 0.05;
+        history.push(Math.max(0.1, Math.min(0.95, score)));
     }
 
-    renderChart(history, cards[0].dataset.name, cards[1].dataset.name);
+    renderChart(history, p1.name, p2.name);
+    document.getElementById('results').innerHTML = `// SYNASTRY CALCULATION COMPLETE // COMPATIBILITY INDEX: ${(score*100).toFixed(1)}%`;
 });
 
 function renderChart(data, n1, n2) {
-    const ctx = document.getElementById("simChart").getContext("2d");
+    const ctx = document.getElementById('simChart').getContext('2d');
     if (myChart) myChart.destroy();
     myChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+            labels: ["M1","M2","M3","M4","M5","M6","M7","M8","M9","M10","M11","M12"],
             datasets: [{
-                label: `${n1} & ${n2} Compatibility`,
+                label: `NEURAL SYNC: ${n1} + ${n2}`,
                 data: data,
-                borderColor: '#00f3ff', // Neon Cyan
-                backgroundColor: 'rgba(0, 243, 255, 0.1)', // Subtle Glow
-                pointBackgroundColor: '#ff007a', // Neon Pink points
-                fill: true,
-                tension: 0.4
+                borderColor: '#00f3ff',
+                backgroundColor: 'rgba(0, 243, 255, 0.1)',
+                fill: true, tension: 0.4,
+                pointBackgroundColor: '#ff007a'
             }]
         },
-        options: { scales: { y: { min: 0, max: 1 } } }
+        options: { scales: { y: { min: 0, max: 1, grid: { color: 'rgba(255,255,255,0.05)' } } } }
     });
 }
