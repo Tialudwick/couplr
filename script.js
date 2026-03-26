@@ -1,163 +1,113 @@
 /**
- * script.js - Couplr Full Interactive (Static Version for GitHub Pages)
- * Includes: Monte Carlo Engine, Comparison Mode, and Custom Labeling.
+ * script.js - Astrology + Relationship Simulator
  */
 
-let comparisonData = null; 
-let comparisonLabel = "Saved Comparison";
 let myChart = null;
+const ZODIAC_SIGNS = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
 
-// ---------- Person Logic ----------
-class Person {
-    constructor(name, traits) {
+// --- 1. Astrology Math: Calculate Sun Sign ---
+function getSunSign(date) {
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) return { sign: "Aries", element: "Fire", weight: 0.8 };
+    if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) return { sign: "Taurus", element: "Earth", weight: 0.6 };
+    if ((month == 5 && day >= 21) || (month == 6 && day <= 20)) return { sign: "Gemini", element: "Air", weight: 0.7 };
+    if ((month == 6 && day >= 21) || (month == 7 && day <= 22)) return { sign: "Cancer", element: "Water", weight: 0.5 };
+    if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) return { sign: "Leo", element: "Fire", weight: 0.9 };
+    if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) return { sign: "Virgo", element: "Earth", weight: 0.5 };
+    if ((month == 9 && day >= 23) || (month == 10 && day <= 22)) return { sign: "Libra", element: "Air", weight: 0.7 };
+    if ((month == 10 && day >= 23) || (month == 11 && day <= 21)) return { sign: "Scorpio", element: "Water", weight: 0.8 };
+    if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) return { sign: "Sagittarius", element: "Fire", weight: 0.8 };
+    if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) return { sign: "Capricorn", element: "Earth", weight: 0.6 };
+    if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) return { sign: "Aquarius", element: "Air", weight: 0.7 };
+    return { sign: "Pisces", element: "Water", weight: 0.4 };
+}
+
+// --- 2. Relationship Simulation Logic ---
+class AstroPerson {
+    constructor(name, birthDate) {
         this.name = name;
-        this.traits = traits;
+        this.astro = getSunSign(new Date(birthDate));
         this.emotional_state = 0.5;
     }
 
-    decideAction(currentScore, eventEffect = 0) {
-        const traitValues = Object.values(this.traits);
-        const base = traitValues.reduce((a, b) => a + b, 0) / traitValues.length;
-        
-        let variation = (Math.random() * 0.4) - 0.2; 
-        if (currentScore < 0.4) variation -= 0.05;
-
-        this.emotional_state = Math.max(0, Math.min(1, this.emotional_state + variation + eventEffect));
-        return base + this.emotional_state;
+    decideAction(compatibility) {
+        // Base behavior influenced by Zodiac "weight" (fire=high energy, water=emotional)
+        const variation = (Math.random() * 0.4) - 0.2;
+        this.emotional_state = Math.max(0, Math.min(1, this.emotional_state + variation + (compatibility / 10)));
+        return (this.astro.weight + this.emotional_state) / 2;
     }
 }
 
-// ---------- Helper: Scrape UI ----------
-function getTraitsFromUI() {
-    const traits = {};
-    const agentDivs = document.querySelectorAll("#agents-container .agent");
-    agentDivs.forEach(div => {
-        const name = div.querySelector("h3").innerText;
-        traits[name] = {
-            communication: parseFloat(div.querySelector(".comm").value),
-            trust: parseFloat(div.querySelector(".trust").value),
-            patience: parseFloat(div.querySelector(".patience").value)
-        };
-    });
-    return traits;
-}
-
-// ---------- Simulation Engine ----------
-function runInternalSimulation(traits, steps = 12, runs = 100) {
-    const allRuns = [];
-    const names = Object.keys(traits);
-
-    for (let r = 0; r < runs; r++) {
-        let agents = names.map(name => new Person(name, traits[name]));
-        let score = 0.5;
-        let history = [];
-
-        for (let s = 0; s < steps; s++) {
-            let eventEffect = 0;
-            let eventLog = [];
-
-            if (Math.random() < 0.2) {
-                let effect = (Math.random() * 0.3) - 0.15;
-                eventEffect += effect;
-                eventLog.push(`Event: ${effect.toFixed(2)}`);
-            }
-
-            let sumActions = agents.reduce((sum, a) => sum + a.decideAction(score, eventEffect), 0);
-            let change = (sumActions / agents.length) / 10; 
-            
-            score = Math.max(0, Math.min(1, score + (change - 0.05))); 
-            history.push({ score: score, events: eventLog });
-        }
-        allRuns.push(history);
-    }
-    return allRuns;
-}
-
-// ---------- UI Handlers ----------
-
+// --- 3. UI Interactions ---
 document.getElementById("add-agent-button").addEventListener("click", () => {
-    const nameInput = document.getElementById("agent-name");
-    const name = nameInput.value.trim();
-    if (!name) return alert("Enter a name");
+    const name = document.getElementById("agent-name").value;
+    const date = document.getElementById("birth-date").value;
+    if (!name || !date) return alert("Enter Name and Birth Date");
 
-    const comm = document.getElementById("agent-comm").value;
-    const trust = document.getElementById("agent-trust").value;
-    const patience = document.getElementById("agent-patience").value;
-
+    const astro = getSunSign(new Date(date));
     const div = document.createElement("div");
     div.className = "agent";
+    div.dataset.date = date; // Store for later
     div.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3>${name}</h3>
-            <button class="remove-btn" style="background:#ddd; border:none; padding:2px 8px; border-radius:4px;">×</button>
-        </div>
-        <label>Communication: <input type="number" class="comm" min="0" max="1" step="0.01" value="${comm}"></label>
-        <label>Trust: <input type="number" class="trust" min="0" max="1" step="0.01" value="${trust}"></label>
-        <label>Patience: <input type="number" class="patience" min="0" max="1" step="0.01" value="${patience}"></label>
+        <h3>${name}</h3>
+        <p><strong>Sign:</strong> ${astro.sign} (${astro.element})</p>
+        <button onclick="this.parentElement.remove()" style="padding:2px 5px; background:#ccc;">Remove</button>
     `;
     document.getElementById("agents-container").appendChild(div);
-    div.querySelector(".remove-btn").addEventListener("click", () => div.remove());
-    nameInput.value = "";
 });
 
 document.getElementById("run-sim").addEventListener("click", () => {
-    const traits = getTraitsFromUI();
-    if (Object.keys(traits).length < 2) return alert("Add at least 2 people!");
+    const agents = [];
+    document.querySelectorAll(".agent").forEach(el => {
+        agents.push(new AstroPerson(el.querySelector("h3").innerText, el.dataset.date));
+    });
 
-    const results = runInternalSimulation(traits, 12, 100);
-    const firstRunScores = results[0].map(r => r.score);
-    
-    const finalScore = (firstRunScores[firstRunScores.length - 1] * 100).toFixed(1);
-    document.getElementById("results").innerHTML = `<strong>Current Run Health:</strong> ${finalScore}%`;
-    
-    renderChart(firstRunScores);
-});
+    if (agents.length < 2) return alert("Add 2 people for a relationship comparison!");
 
-document.getElementById("save-compare").addEventListener("click", () => {
-    if (!myChart) return alert("Run a simulation first!");
-    
-    const label = prompt("Enter a label for this comparison (e.g., 'Scenario A'):", "Scenario A");
-    if (label) {
-        comparisonData = myChart.data.datasets[0].data;
-        comparisonLabel = label;
-        alert(`Baseline saved as "${label}". Modify traits and run again!`);
+    // Compatibility Math (Based on Elements)
+    let compatibility = 0;
+    const e1 = agents[0].astro.element;
+    const e2 = agents[1].astro.element;
+
+    if (e1 === e2) compatibility = 0.2; // Same element = Good
+    else if ((e1 === "Fire" && e2 === "Air") || (e1 === "Earth" && e2 === "Water")) compatibility = 0.15; // Complementary
+    else compatibility = -0.1; // Challenging
+
+    // Run 12-Month Sim
+    let score = 0.5;
+    let scores = [];
+    for (let i = 0; i < 12; i++) {
+        let avgAction = agents.reduce((sum, a) => sum + a.decideAction(compatibility), 0) / agents.length;
+        score = Math.max(0, Math.min(1, score + (avgAction - 0.45))); 
+        scores.push(score);
     }
+
+    updateUI(agents, compatibility, scores);
 });
 
-function renderChart(newData) {
+function updateUI(agents, compatibility, scores) {
+    const finalHealth = (scores[scores.length - 1] * 100).toFixed(1);
+    document.getElementById("results").innerHTML = `
+        <strong>Synastry Report:</strong> ${agents[0].name} & ${agents[1].name}<br>
+        <strong>Element Match:</strong> ${compatibility > 0 ? "Harmonious" : "Challenging"}<br>
+        <strong>12-Month Projected Health:</strong> ${finalHealth}%
+    `;
+
     const ctx = document.getElementById("simChart").getContext("2d");
-    
-    const datasets = [{
-        label: 'Current Simulation',
-        data: newData,
-        borderColor: '#ff7f87',
-        backgroundColor: 'rgba(255, 127, 135, 0.2)',
-        fill: true,
-        tension: 0.4
-    }];
-
-    if (comparisonData) {
-        datasets.push({
-            label: `Comparison: ${comparisonLabel}`,
-            data: comparisonData,
-            borderColor: '#5eb5f7',
-            borderDash: [5, 5],
-            fill: false,
-            tension: 0.4
-        });
-    }
-
     if (myChart) myChart.destroy();
-
     myChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: Array.from({length: newData.length}, (_, i) => `Month ${i + 1}`),
-            datasets: datasets
+            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+            datasets: [{
+                label: 'Relationship Trajectory',
+                data: scores,
+                borderColor: '#ff7f87',
+                backgroundColor: 'rgba(255,127,135,0.2)',
+                fill: true
+            }]
         },
-        options: {
-            responsive: true,
-            scales: { y: { min: 0, max: 1 } }
-        }
+        options: { scales: { y: { min: 0, max: 1 } } }
     });
 }
