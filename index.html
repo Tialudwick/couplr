@@ -3,34 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Couplr | Astrology & Relationship Sim</title>
+    <title>Couplr | Advanced Natal Engine</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>Couplr: Synastry Edition</h1>
+        <h1>Couplr: Advanced Natal Engine</h1>
         
         <div id="new-agent-form">
-            <h3>Add Person to Comparison</h3>
+            <h3>Generate Birth Chart</h3>
             <div class="input-group">
                 <input type="text" id="agent-name" placeholder="Name">
                 <input type="date" id="birth-date">
                 <input type="time" id="birth-time">
-                <button id="add-agent-button">Add to Chart</button>
+                <select id="gmt-offset">
+                    <option value="0">GMT +0 (London)</option>
+                    <option value="-5">GMT -5 (EST/New York)</option>
+                    <option value="-8">GMT -8 (PST/Los Angeles)</option>
+                    <option value="1">GMT +1 (Paris/Berlin)</option>
+                    <option value="5.5">GMT +5.5 (India)</option>
+                </select>
+                <button id="add-agent-button">Calculate Full Map</button>
             </div>
         </div>
 
-        <hr>
         <div id="agents-container"></div>
 
         <div class="controls">
-            <button id="run-sim">Run Relationship Sim</button>
-            <button id="calc-astrology" class="secondary-btn">Compare Natal Charts</button>
+            <button id="run-sim">Run Synastry Simulation</button>
+            <button id="clear-all" style="background:#888;">Clear All</button>
         </div>
 
         <div id="results">
-            <em>Add two people to see their celestial and behavioral compatibility.</em>
+            <em>Add two charts to see how their "What, How, and Where" interact.</em>
         </div>
 
         <div class="chart-container">

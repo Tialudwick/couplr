@@ -1,113 +1,154 @@
 /**
- * script.js - Astrology + Relationship Simulator
+ * script.js - Advanced Natal & Synastry Logic
  */
 
 let myChart = null;
-const ZODIAC_SIGNS = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+const SIGNS = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+const ELEMENTS = {
+    Aries: "Fire", Leo: "Fire", Sagittarius: "Fire",
+    Taurus: "Earth", Virgo: "Earth", Capricorn: "Earth",
+    Gemini: "Air", Libra: "Air", Aquarius: "Air",
+    Cancer: "Water", Scorpio: "Water", Pisces: "Water"
+};
+const HOUSE_THEMES = [
+    "Self & Identity", "Value & Money", "Communication", "Home & Roots",
+    "Romance & Play", "Health & Duty", "Partnership", "Shadow & Shared Assets",
+    "Expansion & Travel", "Career & Public", "Community", "The Unconscious"
+];
 
-// --- 1. Astrology Math: Calculate Sun Sign ---
-function getSunSign(date) {
-    const day = date.getDate();
-    const month = date.getMonth() + 1;
-    if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) return { sign: "Aries", element: "Fire", weight: 0.8 };
-    if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) return { sign: "Taurus", element: "Earth", weight: 0.6 };
-    if ((month == 5 && day >= 21) || (month == 6 && day <= 20)) return { sign: "Gemini", element: "Air", weight: 0.7 };
-    if ((month == 6 && day >= 21) || (month == 7 && day <= 22)) return { sign: "Cancer", element: "Water", weight: 0.5 };
-    if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) return { sign: "Leo", element: "Fire", weight: 0.9 };
-    if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) return { sign: "Virgo", element: "Earth", weight: 0.5 };
-    if ((month == 9 && day >= 23) || (month == 10 && day <= 22)) return { sign: "Libra", element: "Air", weight: 0.7 };
-    if ((month == 10 && day >= 23) || (month == 11 && day <= 21)) return { sign: "Scorpio", element: "Water", weight: 0.8 };
-    if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) return { sign: "Sagittarius", element: "Fire", weight: 0.8 };
-    if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) return { sign: "Capricorn", element: "Earth", weight: 0.6 };
-    if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) return { sign: "Aquarius", element: "Air", weight: 0.7 };
-    return { sign: "Pisces", element: "Water", weight: 0.4 };
+// --- 1. The Calculation Engine ---
+function generateNatalData(date, time, offset) {
+    const birth = new Date(`${date}T${time}`);
+    const ts = birth.getTime() / 1000;
+    
+    // Deterministic math based on birth timestamp
+    const getPos = (speed) => (Math.abs(Math.sin(ts * speed)) * 360);
+    
+    const planets = [
+        { name: "Sun", symbol: "☀️", speed: 0.0000001, meaning: "Core Identity" },
+        { name: "Moon", symbol: "🌙", speed: 0.000013, meaning: "Emotional Instinct" },
+        { name: "Mercury", symbol: "☿", speed: 0.0000004, meaning: "Communication" },
+        { name: "Venus", symbol: "♀", speed: 0.00000016, meaning: "Love & Values" },
+        { name: "Mars", symbol: "♂", speed: 0.00000008, meaning: "Drive & Passion" },
+        { name: "Jupiter", symbol: "♃", speed: 0.00000001, meaning: "Luck & Growth" },
+        { name: "Saturn", symbol: "♄", speed: 0.000000005, meaning: "Discipline" }
+    ];
+
+    const ascDeg = (getPos(0.0001) + (parseFloat(offset) * 15)) % 360;
+
+    const chart = {
+        placements: planets.map(p => {
+            const deg = getPos(p.speed);
+            const sign = SIGNS[Math.floor(deg / 30)];
+            return { ...p, sign, element: ELEMENTS[sign] };
+        }),
+        rising: SIGNS[Math.floor(ascDeg / 30)],
+        houses: HOUSE_THEMES.map((theme, i) => ({
+            num: i + 1,
+            theme: theme,
+            sign: SIGNS[(Math.floor(ascDeg / 30) + i) % 12]
+        }))
+    };
+    return chart;
 }
 
-// --- 2. Relationship Simulation Logic ---
-class AstroPerson {
-    constructor(name, birthDate) {
-        this.name = name;
-        this.astro = getSunSign(new Date(birthDate));
-        this.emotional_state = 0.5;
-    }
-
-    decideAction(compatibility) {
-        // Base behavior influenced by Zodiac "weight" (fire=high energy, water=emotional)
-        const variation = (Math.random() * 0.4) - 0.2;
-        this.emotional_state = Math.max(0, Math.min(1, this.emotional_state + variation + (compatibility / 10)));
-        return (this.astro.weight + this.emotional_state) / 2;
-    }
-}
-
-// --- 3. UI Interactions ---
+// --- 2. UI Rendering ---
 document.getElementById("add-agent-button").addEventListener("click", () => {
     const name = document.getElementById("agent-name").value;
     const date = document.getElementById("birth-date").value;
-    if (!name || !date) return alert("Enter Name and Birth Date");
+    const time = document.getElementById("birth-time").value;
+    const offset = document.getElementById("gmt-offset").value;
 
-    const astro = getSunSign(new Date(date));
+    if (!name || !date || !time) return alert("Please fill out birth details.");
+
+    const chart = generateNatalData(date, time, offset);
+    
     const div = document.createElement("div");
-    div.className = "agent";
-    div.dataset.date = date; // Store for later
+    div.className = "agent natal-card";
+    div.dataset.chart = JSON.stringify(chart);
+    div.dataset.name = name;
+
     div.innerHTML = `
-        <h3>${name}</h3>
-        <p><strong>Sign:</strong> ${astro.sign} (${astro.element})</p>
-        <button onclick="this.parentElement.remove()" style="padding:2px 5px; background:#ccc;">Remove</button>
+        <div class="card-header">
+            <h3>${name}</h3>
+            <button onclick="this.parentElement.parentElement.remove()">×</button>
+        </div>
+        <div class="big-three">
+            <span><strong>Rising:</strong> ${chart.rising}</span>
+        </div>
+        <div class="planet-grid">
+            ${chart.placements.map(p => `
+                <div class="planet-item" title="${p.meaning}">
+                    ${p.symbol} <strong>${p.name}:</strong> ${p.sign} (${p.element})
+                </div>
+            `).join('')}
+        </div>
+        <details>
+            <summary>View 12 Houses (Life Areas)</summary>
+            <div class="house-list">
+                ${chart.houses.map(h => `<p>H${h.num} <em>${h.theme}:</em> <strong>${h.sign}</strong></p>`).join('')}
+            </div>
+        </details>
     `;
     document.getElementById("agents-container").appendChild(div);
+    document.getElementById("agent-name").value = "";
 });
 
+// --- 3. Synastry Sim ---
 document.getElementById("run-sim").addEventListener("click", () => {
-    const agents = [];
-    document.querySelectorAll(".agent").forEach(el => {
-        agents.push(new AstroPerson(el.querySelector("h3").innerText, el.dataset.date));
-    });
+    const cards = document.querySelectorAll(".natal-card");
+    if (cards.length < 2) return alert("Add at least 2 people to compare.");
 
-    if (agents.length < 2) return alert("Add 2 people for a relationship comparison!");
-
-    // Compatibility Math (Based on Elements)
-    let compatibility = 0;
-    const e1 = agents[0].astro.element;
-    const e2 = agents[1].astro.element;
-
-    if (e1 === e2) compatibility = 0.2; // Same element = Good
-    else if ((e1 === "Fire" && e2 === "Air") || (e1 === "Earth" && e2 === "Water")) compatibility = 0.15; // Complementary
-    else compatibility = -0.1; // Challenging
-
-    // Run 12-Month Sim
+    const p1 = JSON.parse(cards[0].dataset.chart);
+    const p2 = JSON.parse(cards[1].dataset.chart);
+    
+    // Score based on Moon (Emotion) and Venus (Love) Elements
     let score = 0.5;
-    let scores = [];
+    const moonMatch = p1.placements[1].element === p2.placements[1].element;
+    const venusMatch = p1.placements[3].element === p2.placements[3].element;
+
+    if (moonMatch) score += 0.2;
+    if (venusMatch) score += 0.2;
+
+    let history = [];
     for (let i = 0; i < 12; i++) {
-        let avgAction = agents.reduce((sum, a) => sum + a.decideAction(compatibility), 0) / agents.length;
-        score = Math.max(0, Math.min(1, score + (avgAction - 0.45))); 
-        scores.push(score);
+        score += (Math.random() * 0.1) - 0.05;
+        score = Math.max(0.1, Math.min(0.95, score));
+        history.push(score);
     }
 
-    updateUI(agents, compatibility, scores);
+    renderSimChart(history, cards[0].dataset.name, cards[1].dataset.name);
+    
+    document.getElementById("results").innerHTML = `
+        <h3>Synastry Report</h3>
+        <p>${moonMatch ? "✅ Emotional Harmony (Moon Match)" : "⚠️ Emotional Adjustment Needed"}</p>
+        <p>${venusMatch ? "✅ Shared Values (Venus Match)" : "⚠️ Different Love Styles"}</p>
+        <p><strong>Predicted 12-Month Connection Health: ${(score * 100).toFixed(1)}%</strong></p>
+    `;
 });
 
-function updateUI(agents, compatibility, scores) {
-    const finalHealth = (scores[scores.length - 1] * 100).toFixed(1);
-    document.getElementById("results").innerHTML = `
-        <strong>Synastry Report:</strong> ${agents[0].name} & ${agents[1].name}<br>
-        <strong>Element Match:</strong> ${compatibility > 0 ? "Harmonious" : "Challenging"}<br>
-        <strong>12-Month Projected Health:</strong> ${finalHealth}%
-    `;
-
+function renderSimChart(data, n1, n2) {
     const ctx = document.getElementById("simChart").getContext("2d");
     if (myChart) myChart.destroy();
     myChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+            labels: ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10", "M11", "M12"],
             datasets: [{
-                label: 'Relationship Trajectory',
-                data: scores,
+                label: `${n1} + ${n2} Compatibility`,
+                data: data,
                 borderColor: '#ff7f87',
-                backgroundColor: 'rgba(255,127,135,0.2)',
-                fill: true
+                tension: 0.4,
+                fill: true,
+                backgroundColor: 'rgba(255,127,135,0.1)'
             }]
         },
         options: { scales: { y: { min: 0, max: 1 } } }
     });
 }
+
+document.getElementById("clear-all").addEventListener("click", () => {
+    document.getElementById("agents-container").innerHTML = "";
+    if (myChart) myChart.destroy();
+    document.getElementById("results").innerHTML = "";
+});
