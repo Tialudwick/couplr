@@ -3,43 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Couplr | Advanced Natal Engine</title>
+    <title>Couplr | Neo-Natal Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Orbitron:wght@500;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>Couplr: Advanced Natal Engine</h1>
+        <h1>Couplr</h1>
+        <p style="text-align: center; opacity: 0.6; margin-bottom: 2rem;">NEURAL SYNASTRY PROTOCOL // VER 3.0</p>
         
         <div id="new-agent-form">
-            <h3>Generate Birth Chart</h3>
-            <div class="input-group">
-                <input type="text" id="agent-name" placeholder="Name">
+            <div class="input-group" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                <input type="text" id="agent-name" placeholder="IDENTIFIER (NAME)">
                 <input type="date" id="birth-date">
                 <input type="time" id="birth-time">
                 <select id="gmt-offset">
-                    <option value="0">GMT +0 (London)</option>
-                    <option value="-5">GMT -5 (EST/New York)</option>
-                    <option value="-8">GMT -8 (PST/Los Angeles)</option>
-                    <option value="1">GMT +1 (Paris/Berlin)</option>
-                    <option value="5.5">GMT +5.5 (India)</option>
+                    <option value="0">GMT +0</option>
+                    <option value="-5">GMT -5</option>
+                    <option value="-8">GMT -8</option>
+                    <option value="1">GMT +1</option>
                 </select>
-                <button id="add-agent-button">Calculate Full Map</button>
+                <button id="add-agent-button">Scan Birth Map</button>
             </div>
         </div>
 
         <div id="agents-container"></div>
 
-        <div class="controls">
-            <button id="run-sim">Run Synastry Simulation</button>
-            <button id="clear-all" style="background:#888;">Clear All</button>
+        <div class="controls" style="margin-top: 2rem;">
+            <button id="run-sim">Initiate Synastry Simulation</button>
+            <button id="clear-all" style="border-color: #444; color: #888; margin-top: 10px;">Purge Data</button>
         </div>
 
         <div id="results">
-            <em>Add two charts to see how their "What, How, and Where" interact.</em>
+            // AWAITING DATA INPUT...
         </div>
 
-        <div class="chart-container">
+        <div class="chart-container" style="margin-top: 2rem; background: rgba(0,0,0,0.4); border-radius: 16px; padding: 20px;">
             <canvas id="simChart"></canvas>
         </div>
     </div>

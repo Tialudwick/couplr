@@ -124,8 +124,9 @@ function renderChart(data, n1, n2) {
             datasets: [{
                 label: `${n1} & ${n2} Compatibility`,
                 data: data,
-                borderColor: '#ff7f87',
-                backgroundColor: 'rgba(255,127,135,0.1)',
+                borderColor: '#00f3ff', // Neon Cyan
+                backgroundColor: 'rgba(0, 243, 255, 0.1)', // Subtle Glow
+                pointBackgroundColor: '#ff007a', // Neon Pink points
                 fill: true,
                 tension: 0.4
             }]
