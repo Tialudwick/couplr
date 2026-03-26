@@ -1,5 +1,5 @@
 /**
- * script.js - Advanced Natal & Synastry Logic
+ * script.js - Full Multi-Agent Natal & Synastry Engine
  */
 
 let myChart = null;
@@ -36,11 +36,18 @@ function generateNatalData(date, time, offset) {
 
     const ascDeg = (getPos(0.0001) + (parseFloat(offset) * 15)) % 360;
 
-    const chart = {
+    return {
         placements: planets.map(p => {
-            const deg = getPos(p.speed);
-            const sign = SIGNS[Math.floor(deg / 30)];
-            return { ...p, sign, element: ELEMENTS[sign] };
+            const totalDeg = getPos(p.speed);
+            const signIndex = Math.floor(totalDeg / 30);
+            return { 
+                name: p.name, 
+                symbol: p.symbol, 
+                sign: SIGNS[signIndex], 
+                element: ELEMENTS[SIGNS[signIndex]], 
+                deg: totalDeg % 360, // Exact degree for aspects
+                meaning: p.meaning 
+            };
         }),
         rising: SIGNS[Math.floor(ascDeg / 30)],
         houses: HOUSE_THEMES.map((theme, i) => ({
@@ -49,83 +56,108 @@ function generateNatalData(date, time, offset) {
             sign: SIGNS[(Math.floor(ascDeg / 30) + i) % 12]
         }))
     };
-    return chart;
 }
 
-// --- 2. UI Rendering ---
+// --- 2. UI: Adding Agent Cards ---
 document.getElementById("add-agent-button").addEventListener("click", () => {
-    const name = document.getElementById("agent-name").value;
-    const date = document.getElementById("birth-date").value;
-    const time = document.getElementById("birth-time").value;
+    const nameInput = document.getElementById("agent-name");
+    const dateInput = document.getElementById("birth-date");
+    const timeInput = document.getElementById("birth-time");
     const offset = document.getElementById("gmt-offset").value;
 
-    if (!name || !date || !time) return alert("Please fill out birth details.");
+    if (!nameInput.value || !dateInput.value || !timeInput.value) {
+        return alert("Please fill out all birth details!");
+    }
 
-    const chart = generateNatalData(date, time, offset);
+    const chart = generateNatalData(dateInput.value, timeInput.value, offset);
     
     const div = document.createElement("div");
     div.className = "agent natal-card";
+    // Store the raw data in the element so we can grab it for simulation
     div.dataset.chart = JSON.stringify(chart);
-    div.dataset.name = name;
+    div.dataset.name = nameInput.value;
 
     div.innerHTML = `
         <div class="card-header">
-            <h3>${name}</h3>
-            <button onclick="this.parentElement.parentElement.remove()">×</button>
+            <h3>${nameInput.value}</h3>
+            <button class="remove-btn" style="background:#ff7f87; color:white; border-radius:50%; width:25px; height:25px; border:none; cursor:pointer;">×</button>
         </div>
-        <div class="big-three">
-            <span><strong>Rising:</strong> ${chart.rising}</span>
-        </div>
+        <div class="big-three">Rising: ${chart.rising}</div>
         <div class="planet-grid">
             ${chart.placements.map(p => `
-                <div class="planet-item" title="${p.meaning}">
-                    ${p.symbol} <strong>${p.name}:</strong> ${p.sign} (${p.element})
+                <div class="planet-item">
+                    ${p.symbol} <strong>${p.name}:</strong> ${p.sign}
                 </div>
             `).join('')}
         </div>
         <details>
-            <summary>View 12 Houses (Life Areas)</summary>
-            <div class="house-list">
-                ${chart.houses.map(h => `<p>H${h.num} <em>${h.theme}:</em> <strong>${h.sign}</strong></p>`).join('')}
+            <summary>Life Areas (Houses)</summary>
+            <div style="font-size:0.8rem; padding:10px;">
+                ${chart.houses.map(h => `<p>H${h.num} ${h.theme}: <b>${h.sign}</b></p>`).join('')}
             </div>
         </details>
     `;
+
     document.getElementById("agents-container").appendChild(div);
-    document.getElementById("agent-name").value = "";
+    
+    // Wire up the remove button
+    div.querySelector(".remove-btn").addEventListener("click", () => div.remove());
+
+    // Clear inputs for the next person
+    nameInput.value = "";
 });
 
-// --- 3. Synastry Sim ---
+// --- 3. Synastry Logic: Calculating Aspects & Comparison ---
 document.getElementById("run-sim").addEventListener("click", () => {
     const cards = document.querySelectorAll(".natal-card");
-    if (cards.length < 2) return alert("Add at least 2 people to compare.");
+    if (cards.length < 2) return alert("You need at least two people to compare charts!");
 
     const p1 = JSON.parse(cards[0].dataset.chart);
     const p2 = JSON.parse(cards[1].dataset.chart);
-    
-    // Score based on Moon (Emotion) and Venus (Love) Elements
-    let score = 0.5;
-    const moonMatch = p1.placements[1].element === p2.placements[1].element;
-    const venusMatch = p1.placements[3].element === p2.placements[3].element;
+    const n1 = cards[0].dataset.name;
+    const n2 = cards[1].dataset.name;
 
-    if (moonMatch) score += 0.2;
-    if (venusMatch) score += 0.2;
+    let baseCompatibility = 0.5;
+    let aspectsFound = [];
 
+    // Compare each planet of Person 1 to each planet of Person 2
+    p1.placements.forEach(plan1 => {
+        p2.placements.forEach(plan2 => {
+            const diff = Math.abs(plan1.deg - plan2.deg);
+            const aspect = getAspect(diff);
+            if (aspect) {
+                aspectsFound.push(`${plan1.name} ${aspect.type} ${plan2.name}`);
+                baseCompatibility += aspect.value;
+            }
+        });
+    });
+
+    // Generate 12-month trajectory
+    let currentScore = Math.max(0.1, Math.min(0.95, baseCompatibility));
     let history = [];
     for (let i = 0; i < 12; i++) {
-        score += (Math.random() * 0.1) - 0.05;
-        score = Math.max(0.1, Math.min(0.95, score));
-        history.push(score);
+        currentScore += (Math.random() * 0.08) - 0.04; // Gentle monthly flux
+        history.push(currentScore);
     }
 
-    renderSimChart(history, cards[0].dataset.name, cards[1].dataset.name);
+    renderSimChart(history, n1, n2);
     
     document.getElementById("results").innerHTML = `
-        <h3>Synastry Report</h3>
-        <p>${moonMatch ? "✅ Emotional Harmony (Moon Match)" : "⚠️ Emotional Adjustment Needed"}</p>
-        <p>${venusMatch ? "✅ Shared Values (Venus Match)" : "⚠️ Different Love Styles"}</p>
-        <p><strong>Predicted 12-Month Connection Health: ${(score * 100).toFixed(1)}%</strong></p>
+        <h3>Synastry: ${n1} & ${n2}</h3>
+        <p><b>Key Interactions:</b> ${aspectsFound.slice(0, 5).join(", ") || "No major aspects found."}</p>
+        <p><b>Final Compatibility Score:</b> ${(currentScore * 100).toFixed(1)}%</p>
     `;
 });
+
+function getAspect(diff) {
+    // Standard Orbs (approx 5 degrees)
+    if (diff < 5 || diff > 355) return { type: "Conjunction", value: 0.15 };
+    if (Math.abs(diff - 120) < 5 || Math.abs(diff - 240) < 5) return { type: "Trine", value: 0.1 };
+    if (Math.abs(diff - 90) < 5 || Math.abs(diff - 270) < 5) return { type: "Square", value: -0.1 };
+    if (Math.abs(diff - 180) < 5) return { type: "Opposition", value: -0.05 };
+    if (Math.abs(diff - 60) < 5 || Math.abs(diff - 300) < 5) return { type: "Sextile", value: 0.05 };
+    return null;
+}
 
 function renderSimChart(data, n1, n2) {
     const ctx = document.getElementById("simChart").getContext("2d");
@@ -133,22 +165,16 @@ function renderSimChart(data, n1, n2) {
     myChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10", "M11", "M12"],
+            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
             datasets: [{
-                label: `${n1} + ${n2} Compatibility`,
+                label: `Connection: ${n1} + ${n2}`,
                 data: data,
                 borderColor: '#ff7f87',
-                tension: 0.4,
+                backgroundColor: 'rgba(255, 127, 135, 0.1)',
                 fill: true,
-                backgroundColor: 'rgba(255,127,135,0.1)'
+                tension: 0.4
             }]
         },
         options: { scales: { y: { min: 0, max: 1 } } }
     });
 }
-
-document.getElementById("clear-all").addEventListener("click", () => {
-    document.getElementById("agents-container").innerHTML = "";
-    if (myChart) myChart.destroy();
-    document.getElementById("results").innerHTML = "";
-});
